@@ -17,6 +17,14 @@ func addTopicHandler(s *state, cmd inputCommand) error {
 
 	topicName := cmd.args[0]
 
+	if topic, err := s.db.GetTopicByName(context.Background(), topicName); err != sql.ErrNoRows {
+		if err == nil {
+			return fmt.Errorf("'%s' already exists as a topic", topic.Name)
+		} else {
+			return err
+		}
+	}
+
 	topicDescription := sql.NullString{
 		String: "",
 		Valid:  false,

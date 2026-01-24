@@ -8,3 +8,8 @@ VALUES (
     NOW()
 )
 RETURNING *;
+
+-- name: GetTopicByName :one
+SELECT *
+FROM   topics
+WHERE  name = $1;

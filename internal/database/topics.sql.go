@@ -42,3 +42,22 @@ func (q *Queries) CreateTopic(ctx context.Context, arg CreateTopicParams) (Topic
 	)
 	return i, err
 }
+
+const getTopicByName = `-- name: GetTopicByName :one
+SELECT id, name, description, created_at, updated_at
+FROM   topics
+WHERE  name = $1
+`
+
+func (q *Queries) GetTopicByName(ctx context.Context, name string) (Topic, error) {
+	row := q.db.QueryRowContext(ctx, getTopicByName, name)
+	var i Topic
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
