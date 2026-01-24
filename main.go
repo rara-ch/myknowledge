@@ -1,49 +1,57 @@
 package main
 
 import (
-	"errors"
+	"database/sql"
 	"fmt"
 	"os"
 
-	"github.com/rara-ch/myknowledge.git/command"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"github.com/rara-ch/myknowledge.git/internal/database"
 )
 
-func main() {
-	cmds := command.NewCLICommands()
+type state struct {
+	db *database.Queries
+}
 
-	cmds.Register("hello", helloHandler)
-	cmds.Register("goodbye", goodbyeHandler)
-	cmds.Register("error", errorHandler)
+func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	}
+
+	connString := os.Getenv("DB_URL")
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	s := &state{
+		db: database.New(db),
+	}
+
+	cmds := newCLICommands()
+	cmds.register("add", addTopicHandler)
 
 	input := os.Args
 
 	if len(input) < 2 {
-		fmt.Println("Please enter a command for myknowledge to work")
-		return
+		fmt.Println("no commands entered")
+		os.Exit(1)
 	}
 
-	cmd := command.InputCommand{
-		Name: input[1],
-		Args: input[2:],
+	cmd := inputCommand{
+		name: input[1],
+		args: input[2:],
 	}
 
-	err := cmds.Run(cmd)
+	err = cmds.run(s, cmd)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
-}
-
-func helloHandler(cmd command.InputCommand) error {
-	fmt.Println("Hello World")
-	return nil
-}
-
-func goodbyeHandler(cmd command.InputCommand) error {
-	fmt.Println("Goodbye Cruel World")
-	return nil
-}
-
-func errorHandler(cmd command.InputCommand) error {
-	fmt.Println("error handler")
-	return errors.New("this is an error")
 }
